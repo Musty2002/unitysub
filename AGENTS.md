@@ -32,3 +32,5 @@ use the editor.
 ## Project-specific decisions
 
 - Host the imported standalone fintech app as a static public HTML file and embed it in the TanStack home route, preserving its supplied CSS and behavior without rewriting its internals.
+- Keep administration in a separate TanStack `/admin` layout with scoped theme tokens; it must not alter the imported customer HTML.
+- Until live data and role-verified authentication are connected, admin pages are presentation-only with empty records and no financial or customer mutation actions.
