@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project-specific decisions
+
+- Host the imported standalone fintech app as a static public HTML file and embed it in the TanStack home route, preserving its supplied CSS and behavior without rewriting its internals.

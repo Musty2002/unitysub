@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "source": "other",
+  "capabilities": [
+    {
+      "capability": "code",
+      "source": "UNITYSUB_PHYSICAL_CARD_DISPLAY_FIXED.html",
+      "outcome": "Served the supplied standalone mobile app unchanged from the home page; only a thin host wrapper and app metadata were added.",
+      "status": "verified",
+      "next_action": ""
+    },
+    {
+      "capability": "schema",
+      "source": "No database schema or server data store detected.",
+      "outcome": "No schema migration required.",
+      "status": "not_applicable",
+      "next_action": ""
+    },
+    {
+      "capability": "records",
+      "source": "The page uses device-local storage; no existing device data export was attached.",
+      "outcome": "Keep original local demo storage behavior; no prior profiles or transactions are imported.",
+      "status": "pending",
+      "next_action": "If real saved profiles or transactions need to be preserved, provide an export; otherwise skip."
+    },
+    {
+      "capability": "auth identities",
+      "source": "Local demo sign-in, registration, and PIN screens; no real identity provider or user export detected.",
+      "outcome": "The source includes demo sign-in, registration, and PIN screens only; no real user accounts are imported.",
+      "status": "pending",
+      "next_action": "If real accounts exist outside this HTML, provide a safe identity export; otherwise skip."
+    },
+    {
+      "capability": "authorization",
+      "source": "Client-side demo gates and a trusted-auth-context check for protected verification.",
+      "outcome": "Preserve existing fail-closed checks; no server authorization system was supplied.",
+      "status": "pending",
+      "next_action": "A trusted server service is required before protected financial or identity actions are live."
+    },
+    {
+      "capability": "uploaded file bytes",
+      "source": "One uploaded HTML file with embedded image data and remote logo assets.",
+      "outcome": "Copied the HTML source intact and confirmed it is byte-for-byte identical.",
+      "status": "verified",
+      "next_action": ""
+    },
+    {
+      "capability": "external providers",
+      "source": "Location lookup, bank/provider logos, favicon/icon CDNs, QR libraries, and a WhatsApp support link.",
+      "outcome": "Retain the existing asset and lookup references; no payment processor is configured.",
+      "status": "pending",
+      "next_action": "Verify available read-only assets; live payment services are not in the source."
+    },
+    {
+      "capability": "public endpoints",
+      "source": "No application API supplied; protected identity verification expects trusted runtime configuration.",
+      "outcome": "Keep the supplied guarded behavior; do not invent a live endpoint.",
+      "status": "pending",
+      "next_action": "Provide a trusted identity service before enabling live verification."
+    },
+    {
+      "capability": "callbacks",
+      "source": "None detected.",
+      "outcome": "Not applicable.",
+      "status": "not_applicable",
+      "next_action": ""
+    },
+    {
+      "capability": "webhooks",
+      "source": "None detected.",
+      "outcome": "Not applicable.",
+      "status": "not_applicable",
+      "next_action": ""
+    },
+    {
+      "capability": "schedules",
+      "source": "None detected.",
+      "outcome": "Not applicable.",
+      "status": "not_applicable",
+      "next_action": ""
+    },
+    {
+      "capability": "secrets",
+      "source": "No environment variables or provider secrets detected.",
+      "outcome": "No secrets copied or requested.",
+      "status": "not_applicable",
+      "next_action": ""
+    },
+    {
+      "capability": "cutover",
+      "source": "Standalone HTML export; no source hosting or production provider supplied.",
+      "outcome": "No production cutover performed.",
+      "status": "pending",
+      "next_action": "Live rollout requires a real financial-service backend and provider configuration."
+    },
+    {
+      "capability": "verification",
+      "source": "Supplied HTML app hosted from the Lovable home page.",
+      "outcome": "Build and route test pass; phone-size preview loads with login, password-reset, and registration screens and no page errors.",
+      "status": "verified",
+      "next_action": "Live account and financial-service flows remain outside the supplied source."
+    }
+  ]
+}
