@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ownsUser(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function validProfile() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'displayName', 'email', 'address', 'state', 'dateOfBirth', 'gender',
+          'nickname', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'displayName', 'email', 'address', 'state', 'dateOfBirth', 'gender',
+          'nickname', 'createdAt', 'updatedAt'
+        ])
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 100
+        && data.email is string
+        && data.email == request.auth.token.email
+        && data.address is string
+        && data.address.size() <= 300
+        && data.state is string
+        && data.state.size() <= 100
+        && data.dateOfBirth is string
+        && data.gender in ['', 'Male', 'Female']
+        && data.nickname is string
+        && data.nickname.size() <= 24
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function validPreferences() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'darkMode', 'autoLogout', 'loginFingerprint', 'loginAlerts',
+          'transactionAlerts', 'updatedAt'
+        ])
+        && data.keys().hasAll(['updatedAt'])
+        && data.updatedAt == request.time
+        && (!('darkMode' in data) || data.darkMode in ['on', 'off'])
+        && (!('autoLogout' in data) || (data.autoLogout is string && data.autoLogout.size() <= 32))
+        && (!('loginFingerprint' in data) || data.loginFingerprint in ['on', 'off'])
+        && (!('loginAlerts' in data) || data.loginAlerts in ['on', 'off'])
+        && (!('transactionAlerts' in data) || data.transactionAlerts in ['on', 'off']);
+    }
+
+    match /users/{userId} {
+      allow get: if ownsUser(userId);
+      allow list: if false;
+      allow create: if ownsUser(userId) && validProfile();
+      allow update: if ownsUser(userId)
+        && validProfile()
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+
+      match /preferences/{preferenceId} {
+        allow get: if ownsUser(userId) && preferenceId == 'app';
+        allow list: if false;
+        allow create, update: if ownsUser(userId)
+          && preferenceId == 'app'
+          && validPreferences();
+        allow delete: if false;
+      }
+    }
+  }
+}

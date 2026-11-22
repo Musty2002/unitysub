@@ -780,6 +780,7 @@ function closeGenderPicker(){const o=document.getElementById('genderPickerOverla
 function selectGender(value){if(value!=='Male'&&value!=='Female')return;const s=document.getElementById('createGender'),txt=document.getElementById('genderPickerText');if(!s||!txt)return;s.value=value;txt.textContent=value;txt.classList.add('chosen');document.querySelectorAll('.gender-picker-option').forEach(b=>b.classList.toggle('selected',b.dataset.gender===value));s.dispatchEvent(new Event('change',{bubbles:true}));closeGenderPicker()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGenderPicker()});
 </script>
+
 <style>
 /* Professional electricity meter type picker */
 .meter-type-native{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
@@ -6125,3 +6126,15 @@ body.dark-mode .bottomnav .navitem.active:not(.qr-navitem){background:#183b33!im
   if(document.readyState!=='loading')chooseCard('physical');
 })();
 </script>
+
+<script id="unitysub-firebase-fallback">
+(function(){
+  try{localStorage.removeItem('unitysub_local_demo_account');localStorage.removeItem('unitysub_device_login_enabled')}catch(e){}
+  function unavailable(id){var target=document.getElementById(id);if(target)target.textContent='Firebase could not be loaded. Refresh the page and try again.';}
+  window.handleUnitySubLogin=function(event){if(event)event.preventDefault();unavailable('loginError');};
+  window.finishLocalDemoSignup=function(event){if(event)event.preventDefault();unavailable('createError');};
+  window.handleUnitySubForgot=function(event){if(event)event.preventDefault();unavailable('forgotError');};
+  window.unlockDemoApp=function(event){if(event)event.preventDefault();unavailable('unlockPinError');};
+})();
+</script>
+<script type="module" src="/unitysub-firebase.js"></script>

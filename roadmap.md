@@ -8,4 +8,5 @@
 - [x] Verify the build, home route, and phone-size login, password-reset, and registration screens.
 - [x] Replace the existing splash mark with the uploaded UNITYSUB logo and app icon.
 - [ ] Optional: import existing device-local data (waiting for a user-provided export).
-- [ ] Connect Firebase Authentication and Cloud Firestore (waiting for the Firebase web-app configuration).
+- [x] Connect Firebase email/password sign-in and owner-scoped profile/preferences in the customer app.
+- [ ] In Firebase Console, enable Email/Password, create Cloud Firestore, and publish `firestore.rules` (requires project-owner console access).
