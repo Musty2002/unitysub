@@ -323,7 +323,7 @@ async function verifyDevicePin(pin) {
 }
 
 function clearSignupSecrets() {
-  for (const id of ["createPassword", "createConfirm", "createPin", "createPinConfirm", "createNin"]) {
+  for (const id of ["createPassword", "createConfirm", "createPin", "createPinConfirm"]) {
     const field = element(id);
     if (field) field.value = "";
   }
@@ -361,8 +361,6 @@ window.finishLocalDemoSignup = async function (event) {
   if (!["createAddress", "createState", "createDob", "createGender"].every((id) => value(id))) {
     return setMessage("createError", "Complete your residential address, state, date of birth and gender in Step 2.");
   }
-  if (!/^\d{11}$/.test(value("createNin"))) return setMessage("createError", "Enter your 11-digit NIN in Step 2.");
-  if (!element("createKycConsent")?.checked) return setMessage("createError", "Please confirm the identity verification consent in Step 2.");
   if (!/^\d{4}$/.test(pin) || pin !== pinConfirm) return setMessage("createError", "Enter the same valid 4-digit PIN in both fields.");
 
   const submitButton = document.querySelector('#createForm button[onclick="finishLocalDemoSignup(event)"]');

@@ -1301,8 +1301,7 @@ body.dark-mode .app.send-active .bottomnav .qr-navitem .navicon{border-color:#0d
 <label class="auth-field"><span>Date of Birth</span><input autocomplete="bday" id="createDob" name="dob" required="" type="date"/></label>
 <label class="auth-field"><span>Gender</span><select aria-hidden="true" class="gender-native-select" id="createGender" name="gender" required="" tabindex="-1"><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option></select><button aria-expanded="false" aria-haspopup="dialog" class="gender-picker-trigger" id="genderPickerTrigger" onclick="openGenderPicker()" type="button"><span aria-hidden="true" class="gender-picker-leading"><svg viewbox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"></path></svg></span><span class="gender-picker-text" id="genderPickerText">Choose your gender</span><svg aria-hidden="true" class="gender-picker-chevron" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></button></label>
 <div class="gender-picker-overlay" id="genderPickerOverlay" onclick="if(event.target===this)closeGenderPicker()"><section aria-labelledby="genderPickerTitle" aria-modal="true" class="gender-picker-dialog" role="dialog"><div class="gender-picker-handle"></div><div class="gender-picker-head"><div><span class="gender-picker-eyebrow">PERSONAL DETAILS</span><h3 id="genderPickerTitle">Select gender</h3><p>Choose one option to continue.</p></div><button aria-label="Close" class="gender-picker-close" onclick="closeGenderPicker()" type="button">×</button></div><div class="gender-picker-options"><button class="gender-picker-option" data-gender="Male" onclick="selectGender('Male')" type="button"><span class="gender-option-icon">M</span><span><strong>Male</strong><small>Male</small></span><span class="gender-option-check"></span></button><button class="gender-picker-option" data-gender="Female" onclick="selectGender('Female')" type="button"><span class="gender-option-icon">F</span><span><strong>Female</strong><small>Female</small></span><span class="gender-option-check"></span></button></div></section></div>
-<label class="auth-field"><span>National Identification Number (NIN)</span><input autocomplete="off" id="createNin" inputmode="numeric" maxlength="11" name="nin" pattern="[0-9]{11}" placeholder="Enter your 11-digit NIN" required=""/></label>
-<label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;margin:12px 0;color:#66766f"><input id="createKycConsent" required="" style="margin-top:2px" type="checkbox"/><span>I confirm the NIN and face photo are mine and consent to identity verification.</span></label>
+
 <div class="auth-error" id="createIdentityStepError" role="status"></div>
 <button class="auth-submit" onclick="advanceCreateStepThree()" type="button">Next</button>
 <button class="auth-submit" onclick="backToCreateStepOne()" style="margin-top:10px;background:#eaf2ef;color:#174943" type="button">Back</button>
@@ -3833,13 +3832,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMeterTypePicker
    const name=val('createName'),email=val('createIdentity').toLowerCase();
    const password=$('createPassword')?.value||'',confirm=$('createConfirm')?.value||'';
    const pin=$('createPin')?.value||'',pin2=$('createPinConfirm')?.value||'';
-   const nin=val('createNin');
+
    if(!name)return err('createError','Enter your full name in Step 1.');
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return err('createError','Enter a valid email address in Step 1.');
    if(password.length<8||password!==confirm)return err('createError','Check that your password is at least 8 characters and both entries match.');
    if(!val('createAddress')||!val('createState')||!val('createDob')||!val('createGender'))return err('createError','Complete your residential address, state, date of birth and gender in Step 2.');
-   if(!/^\d{11}$/.test(nin))return err('createError','Enter your 11-digit NIN in Step 2.');
-   if(!$('createKycConsent')?.checked)return err('createError','Please confirm the identity verification consent in Step 2.');
+
    if(!/^\d{4}$/.test(pin))return err('createError','Enter a 4-digit PIN.');
    if(pin!==pin2)return err('createError','The PINs do not match.');
    const existing=(()=>{try{return JSON.parse(localStorage.getItem('unitysub_local_demo_account')||'null')}catch(_){return null}})();
@@ -4170,9 +4168,6 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
    const dob=new Date(value('createDob')+'T00:00:00');
    if(Number.isNaN(dob.getTime())||dob>=new Date(new Date().toDateString())){setError('createIdentityStepError','Please enter a valid date of birth in the past.');return false;}
    if($('createLga')?.disabled){setError('createIdentityStepError','Please select your state and wait for its LGAs to load.');return false;}
-   // Preserve the existing identity-verification requirements already present in this app.
-   if($('createNin')&&!/^\d{11}$/.test(value('createNin'))){setError('createIdentityStepError','Please enter your 11-digit NIN.');return false;}
-   if($('createKycConsent')&&!$('createKycConsent').checked){setError('createIdentityStepError','Please confirm the identity verification consent.');return false;}
    return true;
  }
  window.handleUnitySubSignup=function(event){
@@ -4206,7 +4201,7 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
      name:value('createName'),email,password:$('createPassword').value,pin,
      address:value('createAddress'),state:value('createState'),
      dob:value('createDob'),gender:value('createGender'),
-     nin:value('createNin'),createdAt:new Date().toISOString()
+     createdAt:new Date().toISOString()
    };
    try{
      localStorage.setItem('unitysub_local_demo_account',JSON.stringify(profile));
