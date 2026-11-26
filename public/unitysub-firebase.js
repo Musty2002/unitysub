@@ -136,7 +136,7 @@ function authError(error) {
     return "That verification code is invalid or expired. Request a new code and try again.";
   }
   if (code === "auth/operation-not-allowed") {
-    return "A required sign-in option is not enabled in Firebase. Enable Email/Password and Phone sign-in.";
+    return `Firebase reports that the requested sign-in method is disabled for project ${firebaseConfig.projectId}. Confirm the provider is enabled in that exact project.`;
   }
   if (code === "auth/email-already-in-use") return "An account with this email already exists. Please log in.";
   if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
