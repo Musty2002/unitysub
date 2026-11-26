@@ -377,7 +377,7 @@ body.dark-mode .settings-subpage{background:#0d1f1b;color:#edf5f1}body.dark-mode
 
 
 /* v41 auth visibility fix: author form styles must not override hidden forms */
-.auth-screen form[hidden], #loginForm[hidden], #createForm[hidden], #forgotForm[hidden] { display: none !important; }
+.auth-screen form[hidden], #loginForm[hidden], #createForm[hidden], #forgotForm[hidden], #phoneLoginPanel[hidden], #unitysubPhoneLoginCodeWrap[hidden], #unitysubSignupOtp[hidden], #unitysubPhoneLinkCodeWrap[hidden] { display: none !important; }
 
 /* v43: clearer password/PIN confirmation UX */
 .auth-secret-wrap{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #dfe6e3;border-radius:16px;background:#fbfcfb;padding-right:12px;box-sizing:border-box}
@@ -1277,14 +1277,22 @@ body.dark-mode .app.send-active .bottomnav .qr-navitem .navicon{border-color:#0d
 <label class="auth-field"><span>Email address</span><input autocomplete="username" id="loginIdentity" placeholder="Enter your email address" required="" type="email"/></label>
 <label class="auth-field"><span>Password</span><input autocomplete="current-password" id="loginPassword" minlength="4" placeholder="Enter password" required="" type="password"/></label>
 <div style="text-align:right"><button onclick="showAuth('forgot')" style="border:0;background:none;color:#205d55;font-weight:650" type="button">Forgot password?</button></div>
-<div class="auth-error" id="loginError" role="status"></div><button class="auth-submit" type="submit">Login</button>
+<div class="auth-error" id="loginError" role="status"></div><button class="auth-submit" type="submit">Login</button><button class="auth-submit" onclick="showUnitySubPhoneLogin()" style="margin-top:10px;background:#eaf2ef;color:#174943" type="button">Sign in with phone</button>
 <p class="auth-switch">New to UNITYSUB? <button onclick="showAuth('create')" type="button">Create account</button></p>
 </form>
+<div id="phoneLoginPanel" hidden>
+<h1 class="auth-title">Sign in with phone</h1><p class="auth-sub">Receive a secure one-time code by SMS.</p>
+<label class="auth-field"><span>Phone number</span><input autocomplete="tel" id="unitysubPhoneLoginNumber" inputmode="tel" placeholder="Enter phone number" type="tel"/></label>
+<div id="unitysubPhoneLoginRecaptcha"></div><button class="auth-submit" onclick="sendUnitySubPhoneLoginCode()" type="button">Send code</button>
+<div hidden id="unitysubPhoneLoginCodeWrap"><label class="auth-field"><span>6-digit code</span><input autocomplete="one-time-code" id="unitysubPhoneLoginCode" inputmode="numeric" maxlength="6" placeholder="Enter SMS code" type="text"/></label><button class="auth-submit" onclick="completeUnitySubPhoneLogin()" type="button">Verify and sign in</button></div>
+<div class="auth-error" id="unitysubPhoneLoginError" role="status"></div><p class="auth-switch"><button onclick="showUnitySubEmailLogin()" type="button">Use email and password</button></p>
+</div>
 <form id="createForm" onsubmit="handleUnitySubSignup(event)">
 <div id="createStepOne">
 <h1 class="auth-title">Create account</h1><p class="auth-sub">Create your UNITYSUB sign-in account. We will email you a confirmation link. Identity verification and wallet activation are separate steps.</p>
 <label class="auth-field"><span>Full name</span><input autocomplete="name" id="createName" placeholder="Enter your full name" required=""/></label>
 <label class="auth-field"><span>Email address</span><input autocomplete="email" id="createIdentity" placeholder="Enter your email address" required="" type="email"/></label>
+<label class="auth-field"><span>Phone number</span><input autocomplete="tel" id="createPhone" inputmode="tel" placeholder="Enter phone number" required="" type="tel"/></label>
 <label class="auth-field"><span>Create password</span><div class="auth-secret-wrap"><input autocomplete="new-password" id="createPassword" minlength="8" placeholder="At least 8 characters" required="" type="password"/><button aria-label="Show password" class="auth-reveal" onclick="toggleAuthSecret('createPassword',this)" type="button">Show</button></div></label>
 <label class="auth-field"><span>Confirm password</span><div class="auth-secret-wrap"><input autocomplete="new-password" id="createConfirm" minlength="8" placeholder="Re-enter password" required="" type="password"/><button aria-label="Show confirm password" class="auth-reveal" onclick="toggleAuthSecret('createConfirm',this)" type="button">Show</button></div></label>
 <div class="auth-error" id="createStepOneError" role="status"></div>
@@ -1311,7 +1319,7 @@ body.dark-mode .app.send-active .bottomnav .qr-navitem .navicon{border-color:#0d
 <p style="margin:0 0 12px;color:#87928f;font-size:14px;line-height:1.45">Create a separate 4-digit PIN for payment confirmation. It is different from your login password.</p>
 <label class="auth-field"><span>Create payment PIN</span><div class="auth-secret-wrap"><input autocomplete="off" id="createPin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="Enter 4-digit PIN" required="" type="password"><button aria-label="Show payment PIN" class="auth-reveal" onclick="toggleAuthSecret('createPin',this)" type="button">Show</button></div></label>
 <label class="auth-field"><span>Confirm payment PIN</span><div class="auth-secret-wrap"><input autocomplete="off" id="createPinConfirm" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="Re-enter 4-digit PIN" required="" type="password"/><button aria-label="Show confirm payment PIN" class="auth-reveal" onclick="toggleAuthSecret('createPinConfirm',this)" type="button">Show</button></div></label>
-<div class="auth-error" id="createError" role="status"></div><button class="auth-submit" onclick="finishLocalDemoSignup(event)" type="button">Create account</button>
+<div id="unitysubSignupRecaptcha"></div><div id="unitysubSignupOtp" hidden><label class="auth-field"><span>6-digit phone code</span><input autocomplete="one-time-code" id="unitysubSignupSmsCode" inputmode="numeric" maxlength="6" placeholder="Enter SMS code" type="text"/></label><button class="auth-submit" onclick="resendUnitySubSignupPhoneCode()" style="margin-top:8px;background:#eaf2ef;color:#174943" type="button">Resend code</button></div><div class="auth-error" id="createPhoneStatus" role="status"></div><div class="auth-error" id="createError" role="status"></div><button class="auth-submit" onclick="finishLocalDemoSignup(event)" type="button">Create account</button>
 <button class="auth-submit" onclick="backToCreateStepTwo()" style="margin-top:10px;background:#eaf2ef;color:#174943" type="button">Back</button>
 </div>
 <p class="auth-switch">Already have an account? <button onclick="showAuth('login')" type="button">Login</button></p>
@@ -2187,7 +2195,7 @@ function renderSettingsSubpage(name){
   let body='';
   const header=`<div class="subpage-header"><button class="subpage-back" onclick="closeSettingsSubpage()" aria-label="Back">‹</button><div class="title">${esc(name)}</div></div>`;
   if(name==='My Profile'){
-    const currentUser=(()=>{const u=window.unitySubUser||{};return {name:u.user_metadata?.full_name||saved('unitysub-profile-full-name',''),identity:u.email||saved('unitysub-profile-identity','')}})();
+    const currentUser=(()=>{const u=window.unitySubUser||{};return {name:u.displayName||u.user_metadata?.full_name||saved('unitysub-profile-full-name',''),identity:u.email||saved('unitysub-profile-identity',''),phone:u.phoneNumber||''}})();
     const tier=Number(saved('unitysub-account-tier','1'))||1;
     const tierLabel=tier>=3?'Tier 3':tier===2?'Tier 2':'Tier 1';
     const row=(label,value)=>`<div class="subpage-row" style="cursor:default"><span>${label}</span><span class="value">${esc(value||'Not provided')}</span></div>`;
@@ -2196,8 +2204,8 @@ function renderSettingsSubpage(name){
     <div class="profile-account-row"><span>Account Tier</span><span class="value"><span class="tier-pill">${tierLabel}</span></span></div>
     <div class="profile-account-row"><span>Verification Status</span><span class="value">${esc(saved('unitysub-tier-'+tier+'-status','Pending verification'))}</span></div></div>
     <div class="subpage-section-title">Personal Information</div><div class="subpage-card">
-    ${row('Full Name',currentUser.name||saved('unitysub-profile-full-name',''))}${row('Email / Phone',currentUser.identity||saved('unitysub-profile-identity',''))}${row('Residential Address',currentUser.address||saved('unitysub-profile-address',''))}${row('Date of Birth',currentUser.dob||saved('unitysub-profile-dob',''))}${row('Gender',currentUser.gender||saved('unitysub-profile-gender',''))}${row('NIN',currentUser.nin?'••••••••'+String(currentUser.nin).slice(-3):'Not provided')}
-    </div><p class="subpage-note">Your registration details are read-only and cannot be edited here. You can only change your login password or payment PIN. Contact support if your personal details need correction.</p>`;
+    ${row('Full Name',currentUser.name||saved('unitysub-profile-full-name',''))}${row('Email address',currentUser.identity||saved('unitysub-profile-identity',''))}<div class="subpage-row" style="cursor:default"><span>Verified phone</span><span id="unitysubVerifiedPhoneValue" class="value">${esc(currentUser.phone||'Not linked')}</span></div>${row('Residential Address',currentUser.address||saved('unitysub-profile-address',''))}${row('Date of Birth',currentUser.dob||saved('unitysub-profile-dob',''))}${row('Gender',currentUser.gender||saved('unitysub-profile-gender',''))}${row('NIN',currentUser.nin?'••••••••'+String(currentUser.nin).slice(-3):'Not provided')}
+    </div><div class="subpage-section-title">Phone sign-in</div><div class="subpage-card" style="padding:16px"><p class="subpage-note">Verified phone: <strong id="unitysubLinkedPhone">Not linked</strong></p><label for="unitysubPhoneLinkNumber" style="display:block;font-size:13px;font-weight:750;margin:10px 0 8px">Phone number</label><input id="unitysubPhoneLinkNumber" autocomplete="tel" inputmode="tel" placeholder="Enter phone number" type="tel" style="width:100%;box-sizing:border-box;padding:13px;border:1px solid #dce5e1;border-radius:13px;background:var(--input-bg,#fff);color:var(--text);font:inherit"><div id="unitysubPhoneLinkRecaptcha"></div><button id="unitysubPhoneLinkSend" class="auth-submit" onclick="sendUnitySubPhoneLinkCode()" type="button">Send verification code</button><div id="unitysubPhoneLinkCodeWrap" hidden><label for="unitysubPhoneLinkCode" style="display:block;font-size:13px;font-weight:750;margin:10px 0 8px">6-digit phone code</label><input id="unitysubPhoneLinkCode" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="Enter SMS code" type="text" style="width:100%;box-sizing:border-box;padding:13px;border:1px solid #dce5e1;border-radius:13px;background:var(--input-bg,#fff);color:var(--text);font:inherit"><button class="auth-submit" onclick="confirmUnitySubPhoneLink()" type="button">Verify phone number</button></div><div class="auth-error" id="unitysubPhoneLinkError" role="status"></div></div><p class="subpage-note">Your registration details are read-only and cannot be edited here. You can only change your login password or payment PIN. Contact support if your personal details need correction.</p>`;
   } else if(name==='Payment Settings'){
     body=`<div class="subpage-section-title">Payment security</div>
     <div class="subpage-card" style="padding:18px;border-radius:22px;background:linear-gradient(135deg,#174943,#287568);color:#fff;margin-bottom:18px">
@@ -3814,6 +3822,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMeterTypePicker
    const pw=$('createPassword')?.value||'', confirm=$('createConfirm')?.value||'';
    if(!name)return err('createStepOneError','Enter your full name.');
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return err('createStepOneError','Enter a valid email address.');
+    const phone=val('createPhone').replace(/[\s().-]/g,'');
+    if(!/^(?:\+?[1-9]\d{7,14}|0\d{10})$/.test(phone))return err('createStepOneError','Enter a valid phone number.');
    if(pw.length<8)return err('createStepOneError','Password must be at least 8 characters.');
    if(pw!==confirm)return err('createStepOneError','Passwords do not match.');
    showStep(2);
@@ -3854,7 +3864,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMeterTypePicker
  window.finishLocalDemoSignup=originalFinal;
  window.addEventListener('load',function(){
    const form=$('createForm');
-   if(form)form.addEventListener('submit',originalFinal,true);
+   if(form)form.addEventListener('submit',function(event){
+      event.preventDefault();
+      if(!$('createStepOne').hidden){window.handleUnitySubSignup(event);return;}
+      if(!$('createStepTwo').hidden){window.advanceCreateStepThree();return;}
+      if(window.finishLocalDemoSignup&&window.finishLocalDemoSignup!==originalFinal){window.finishLocalDemoSignup(event);return;}
+      err('createError','Firebase is unavailable. Please reload and try again.');
+    },true);
  });
 })();
 </script>
@@ -4155,6 +4171,8 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
    $('createName').value=full.normalized;
    const email=value('createIdentity').toLowerCase();
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError('createStepOneError','Please enter a valid email address.');return false;}
+    const phone=value('createPhone').replace(/[\s().-]/g,'');
+    if(!/^(?:\+?[1-9]\d{7,14}|0\d{10})$/.test(phone)){setError('createStepOneError','Please enter a valid phone number.');return false;}
    $('createIdentity').value=email;
    const password=$('createPassword')?.value||'',confirm=$('createConfirm')?.value||'';
    if(password.length<8){setError('createStepOneError','Password must be at least 8 characters.');return false;}
@@ -4221,7 +4239,9 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
  document.addEventListener('submit',function(event){
    if(event.target&&event.target.id==='createForm'){
      event.preventDefault();event.stopImmediatePropagation();
-     window.handleUnitySubSignup(event);
+     if(!$('createStepOne').hidden){window.handleUnitySubSignup(event);return;}
+     if(!$('createStepTwo').hidden){window.advanceCreateStepThree();return;}
+     if(window.finishLocalDemoSignup)window.finishLocalDemoSignup(event);
    }
  },true);
  // Ensure every entry into account creation starts at Step 1, never at a stale stage.

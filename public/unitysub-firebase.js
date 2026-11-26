@@ -2,10 +2,16 @@ import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.10
 import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
+  deleteUser,
+  getAdditionalUserInfo,
   getAuth,
+  linkWithCredential,
   onAuthStateChanged,
+  PhoneAuthProvider,
+  RecaptchaVerifier,
   sendPasswordResetEmail,
   setPersistence,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -21,6 +27,7 @@ import {
   createProfileRecord,
   PREFERENCE_STORAGE_FIELDS,
   PROFILE_STORAGE_ENTRIES,
+  normalizePhoneNumber,
 } from "/unitysub-firebase-profile.js";
 
 const firebaseConfig = {
@@ -53,6 +60,10 @@ let pendingSignup = false;
 let suppressPreferenceSync = false;
 let preferenceTimer;
 let pendingPreferences = {};
+let signupPhoneVerificationId = "";
+let loginPhoneVerificationId = "";
+let linkedPhoneVerificationId = "";
+const phoneRecaptchaVerifiers = new Map();
 
 try {
   RAW_REMOVE.call(appStorage, LEGACY_ACCOUNT_KEY);
@@ -115,8 +126,17 @@ function toast(message) {
 
 function authError(error) {
   const code = error?.code;
+  if (code === "auth/invalid-phone-number") return "Enter a valid phone number, including its country code.";
+  if (code === "auth/captcha-check-failed") return "Phone verification could not be completed. Please try again.";
+  if (code === "auth/quota-exceeded") return "SMS verification is temporarily unavailable. Please try again later.";
+  if (code === "auth/credential-already-in-use" || code === "auth/phone-number-already-exists") {
+    return "This phone number is already linked to another account.";
+  }
+  if (code === "auth/invalid-verification-code" || code === "auth/code-expired") {
+    return "That verification code is invalid or expired. Request a new code and try again.";
+  }
   if (code === "auth/operation-not-allowed") {
-    return "Email/password sign-in is not enabled in Firebase yet. Enable it under Authentication → Sign-in method.";
+    return "A required sign-in option is not enabled in Firebase. Enable Email/Password and Phone sign-in.";
   }
   if (code === "auth/email-already-in-use") return "An account with this email already exists. Please log in.";
   if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
@@ -129,6 +149,29 @@ function authError(error) {
     return "Firebase could not be reached. Check your connection and try again.";
   }
   return "Sign-in could not be completed. Please try again.";
+}
+
+function clearPhoneRecaptcha(containerId) {
+  const verifier = phoneRecaptchaVerifiers.get(containerId);
+  if (verifier) verifier.clear();
+  phoneRecaptchaVerifiers.delete(containerId);
+}
+
+async function requestPhoneVerification(phoneNumber, containerId) {
+  clearPhoneRecaptcha(containerId);
+  const container = element(containerId);
+  if (!container) throw new Error("Phone verification is unavailable on this screen.");
+  const verifier = new RecaptchaVerifier(auth, container, { size: "invisible" });
+  phoneRecaptchaVerifiers.set(containerId, verifier);
+  try {
+    const provider = new PhoneAuthProvider(auth);
+    const verificationId = await provider.verifyPhoneNumber({ phoneNumber }, verifier);
+    clearPhoneRecaptcha(containerId);
+    return verificationId;
+  } catch (error) {
+    clearPhoneRecaptcha(containerId);
+    throw error;
+  }
 }
 
 function firestoreProfileRef(uid) {
@@ -249,6 +292,10 @@ function showLogin() {
     authScreen.setAttribute("aria-hidden", "false");
   }
   if (typeof window.showAuth === "function") window.showAuth("login");
+  const phonePanel = element("phoneLoginPanel");
+  const loginForm = element("loginForm");
+  if (phonePanel) phonePanel.hidden = true;
+  if (loginForm) loginForm.hidden = false;
 }
 
 function showPinLock() {
@@ -329,6 +376,66 @@ function clearSignupSecrets() {
   }
 }
 
+window.showUnitySubPhoneLogin = function () {
+  const loginForm = element("loginForm");
+  const phonePanel = element("phoneLoginPanel");
+  if (loginForm) loginForm.hidden = true;
+  if (phonePanel) phonePanel.hidden = false;
+  setMessage("unitysubPhoneLoginError", "");
+};
+
+window.showUnitySubEmailLogin = function () {
+  const loginForm = element("loginForm");
+  const phonePanel = element("phoneLoginPanel");
+  if (phonePanel) phonePanel.hidden = true;
+  if (loginForm) loginForm.hidden = false;
+  setMessage("unitysubPhoneLoginError", "");
+};
+
+window.sendUnitySubPhoneLoginCode = async function () {
+  setMessage("unitysubPhoneLoginError", "");
+  const phoneNumber = normalizePhoneNumber(element("unitysubPhoneLoginNumber")?.value || "");
+  if (!phoneNumber) return setMessage("unitysubPhoneLoginError", "Enter a valid phone number, including its country code.");
+  try {
+    loginPhoneVerificationId = await requestPhoneVerification(phoneNumber, "unitysubPhoneLoginRecaptcha");
+    const codeWrap = element("unitysubPhoneLoginCodeWrap");
+    if (codeWrap) codeWrap.hidden = false;
+    setMessage("unitysubPhoneLoginError", `A 6-digit code was sent to ${phoneNumber}.`);
+  } catch (error) {
+    setMessage("unitysubPhoneLoginError", authError(error));
+  }
+};
+
+window.completeUnitySubPhoneLogin = async function () {
+  setMessage("unitysubPhoneLoginError", "");
+  const code = (element("unitysubPhoneLoginCode")?.value || "").trim();
+  if (!loginPhoneVerificationId) return setMessage("unitysubPhoneLoginError", "Request a verification code first.");
+  if (!/^\d{6}$/.test(code)) return setMessage("unitysubPhoneLoginError", "Enter the 6-digit code sent to your phone.");
+  try {
+    await authPersistenceReady;
+    const credential = await signInWithCredential(auth, PhoneAuthProvider.credential(loginPhoneVerificationId, code));
+    if (!credential.user.email) {
+      if (getAdditionalUserInfo(credential)?.isNewUser) {
+        try {
+          await deleteUser(credential.user);
+        } catch {
+          // Don't keep a new phone-only account if Firebase won't delete it.
+        }
+      }
+      await signOut(auth);
+      loginPhoneVerificationId = "";
+      window.showUnitySubPhoneLogin();
+      return setMessage("unitysubPhoneLoginError", "This phone number is not linked to an email account. Sign in with email, then verify it in My Profile.");
+    }
+    loginPhoneVerificationId = "";
+    if (element("unitysubPhoneLoginCode")) element("unitysubPhoneLoginCode").value = "";
+    const codeWrap = element("unitysubPhoneLoginCodeWrap");
+    if (codeWrap) codeWrap.hidden = true;
+  } catch (error) {
+    setMessage("unitysubPhoneLoginError", authError(error));
+  }
+};
+
 window.handleUnitySubLogin = async function (event) {
   if (event) event.preventDefault();
   setMessage("loginError", "");
@@ -347,9 +454,11 @@ window.handleUnitySubLogin = async function (event) {
 window.finishLocalDemoSignup = async function (event) {
   if (event) event.preventDefault();
   setMessage("createError", "");
+  setMessage("createPhoneStatus", "");
   const value = (id) => (element(id)?.value || "").trim();
   const name = value("createName");
   const email = value("createIdentity").toLowerCase();
+  const phoneNumber = normalizePhoneNumber(value("createPhone"));
   const password = element("createPassword")?.value || "";
   const confirm = element("createConfirm")?.value || "";
   const pin = element("createPin")?.value || "";
@@ -357,6 +466,7 @@ window.finishLocalDemoSignup = async function (event) {
 
   if (!name) return setMessage("createError", "Enter your full name in Step 1.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMessage("createError", "Enter a valid email address in Step 1.");
+  if (!phoneNumber) return setMessage("createError", "Enter a valid phone number with country code in Step 1.");
   if (password.length < 8 || password !== confirm) return setMessage("createError", "Check that your password is at least 8 characters and both entries match.");
   if (!["createAddress", "createState", "createDob", "createGender"].every((id) => value(id))) {
     return setMessage("createError", "Complete your residential address, state, date of birth and gender in Step 2.");
@@ -368,11 +478,40 @@ window.finishLocalDemoSignup = async function (event) {
   pendingSignup = true;
   try {
     await authPersistenceReady;
+    if (!signupPhoneVerificationId) {
+      signupPhoneVerificationId = await requestPhoneVerification(phoneNumber, "unitysubSignupRecaptcha");
+      const otpWrap = element("unitysubSignupOtp");
+      if (otpWrap) otpWrap.hidden = false;
+      if (submitButton) submitButton.textContent = "Verify phone number";
+      setMessage("createPhoneStatus", `A 6-digit code was sent to ${phoneNumber}. Enter it to finish creating your account.`);
+      pendingSignup = false;
+      return;
+    }
+    const smsCode = value("unitysubSignupSmsCode");
+    if (!/^\d{6}$/.test(smsCode)) {
+      pendingSignup = false;
+      return setMessage("createError", "Enter the 6-digit code sent to your phone.");
+    }
+    const phoneCredential = PhoneAuthProvider.credential(signupPhoneVerificationId, smsCode);
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = credential.user;
+    let user = credential.user;
+    try {
+      const linkedCredential = await linkWithCredential(user, phoneCredential);
+      user = linkedCredential.user;
+      await user.getIdToken(true);
+    } catch (error) {
+      try {
+        await deleteUser(user);
+      } catch {
+        // The registration error below remains the useful message for the user.
+      }
+      await signOut(auth).catch(() => undefined);
+      throw error;
+    }
     const profile = createProfileRecord({
       displayName: name,
       email,
+      phoneNumber: user.phoneNumber || phoneNumber,
       address: value("createAddress"),
       state: value("createState"),
       dateOfBirth: value("createDob"),
@@ -394,8 +533,11 @@ window.finishLocalDemoSignup = async function (event) {
       profileSyncError = error;
     }
     pendingSignup = false;
+    signupPhoneVerificationId = "";
     clearSignupSecrets();
+    if (element("unitysubSignupSmsCode")) element("unitysubSignupSmsCode").value = "";
     setLocalProfile(profile);
+    window.unitySubUser = user;
     try {
       await loadPreferences(user.uid);
     } catch {
@@ -410,6 +552,80 @@ window.finishLocalDemoSignup = async function (event) {
     setMessage("createError", authError(error));
   } finally {
     if (submitButton) submitButton.disabled = false;
+  }
+};
+
+window.resendUnitySubSignupPhoneCode = async function () {
+  const phoneNumber = normalizePhoneNumber(element("createPhone")?.value || "");
+  if (!phoneNumber) return setMessage("createError", "Enter a valid phone number with country code in Step 1.");
+  try {
+    signupPhoneVerificationId = await requestPhoneVerification(phoneNumber, "unitysubSignupRecaptcha");
+    setMessage("createPhoneStatus", `A new 6-digit code was sent to ${phoneNumber}.`);
+  } catch (error) {
+    setMessage("createError", authError(error));
+  }
+};
+
+function refreshPhoneLinkPanel() {
+  const user = auth.currentUser;
+  const phoneLabel = element("unitysubLinkedPhone");
+  if (phoneLabel) phoneLabel.textContent = user?.phoneNumber || "No verified phone number linked";
+  const profilePhone = element("unitysubVerifiedPhoneValue");
+  if (profilePhone) profilePhone.textContent = user?.phoneNumber || "Not linked";
+  const numberInput = element("unitysubPhoneLinkNumber");
+  if (numberInput && user?.phoneNumber) {
+    numberInput.value = user.phoneNumber;
+    numberInput.disabled = true;
+  }
+  const sendButton = element("unitysubPhoneLinkSend");
+  if (sendButton) sendButton.disabled = !user?.email || Boolean(user.phoneNumber);
+}
+
+window.sendUnitySubPhoneLinkCode = async function () {
+  setMessage("unitysubPhoneLinkError", "");
+  const user = auth.currentUser;
+  if (!user?.email) return setMessage("unitysubPhoneLinkError", "Sign in with your email account before linking a phone number.");
+  if (user.phoneNumber) return setMessage("unitysubPhoneLinkError", "A verified phone number is already linked to this account.");
+  const phoneNumber = normalizePhoneNumber(element("unitysubPhoneLinkNumber")?.value || "");
+  if (!phoneNumber) return setMessage("unitysubPhoneLinkError", "Enter a valid phone number, including its country code.");
+  try {
+    linkedPhoneVerificationId = await requestPhoneVerification(phoneNumber, "unitysubPhoneLinkRecaptcha");
+    const codeWrap = element("unitysubPhoneLinkCodeWrap");
+    if (codeWrap) codeWrap.hidden = false;
+    setMessage("unitysubPhoneLinkError", `A 6-digit code was sent to ${phoneNumber}.`);
+  } catch (error) {
+    setMessage("unitysubPhoneLinkError", authError(error));
+  }
+};
+
+window.confirmUnitySubPhoneLink = async function () {
+  setMessage("unitysubPhoneLinkError", "");
+  const code = (element("unitysubPhoneLinkCode")?.value || "").trim();
+  if (!linkedPhoneVerificationId) return setMessage("unitysubPhoneLinkError", "Request a verification code first.");
+  if (!/^\d{6}$/.test(code)) return setMessage("unitysubPhoneLinkError", "Enter the 6-digit code sent to your phone.");
+  const user = auth.currentUser;
+  if (!user?.email) return setMessage("unitysubPhoneLinkError", "Sign in with your email account before linking a phone number.");
+  try {
+    const phoneCredential = PhoneAuthProvider.credential(linkedPhoneVerificationId, code);
+    const linkedCredential = await linkWithCredential(user, phoneCredential);
+    const linkedUser = linkedCredential.user;
+    await linkedUser.getIdToken(true);
+    window.unitySubUser = linkedUser;
+    linkedPhoneVerificationId = "";
+    const codeWrap = element("unitysubPhoneLinkCodeWrap");
+    if (codeWrap) codeWrap.hidden = true;
+    refreshPhoneLinkPanel();
+    const loaded = await loadProfile(linkedUser);
+    const profile = createProfileRecord({ ...loaded.profile, phoneNumber: linkedUser.phoneNumber || "" });
+    setLocalProfile(profile);
+    try {
+      await saveProfileDocument(linkedUser, profile);
+      setMessage("unitysubPhoneLinkError", "Phone verification complete. You can now sign in with this number.");
+    } catch {
+      setMessage("unitysubPhoneLinkError", "Phone verification is complete. Profile syncing will retry when Firestore is ready.");
+    }
+  } catch (error) {
+    setMessage("unitysubPhoneLinkError", authError(error));
   }
 };
 
@@ -474,14 +690,25 @@ if (typeof originalSaveNickname === "function") {
   };
 }
 
+const originalSettingAction = window.settingAction;
+if (typeof originalSettingAction === "function") {
+  window.settingAction = function () {
+    const result = originalSettingAction.apply(this, arguments);
+    if (arguments[0] === "My Profile") window.setTimeout(refreshPhoneLinkPanel, 0);
+    return result;
+  };
+}
+
 onAuthStateChanged(auth, async (user) => {
   const isInitialState = initialAuthState;
   initialAuthState = false;
   if (!user) {
+    window.unitySubUser = null;
     setActiveUser(null);
     showLogin();
     return;
   }
+  window.unitySubUser = user;
   setActiveUser(user.uid);
   if (pendingSignup) return;
 

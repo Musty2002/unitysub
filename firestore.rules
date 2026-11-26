@@ -9,7 +9,7 @@ service cloud.firestore {
     function validProfile() {
       let data = request.resource.data;
       return data.keys().hasOnly([
-          'displayName', 'email', 'address', 'state', 'dateOfBirth', 'gender',
+          'displayName', 'email', 'address', 'state', 'dateOfBirth', 'gender', 'phoneNumber',
           'nickname', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasAll([
@@ -27,6 +27,8 @@ service cloud.firestore {
         && data.state.size() <= 100
         && data.dateOfBirth is string
         && data.gender in ['', 'Male', 'Female']
+        && (!('phoneNumber' in data) || data.phoneNumber == '' ||
+          (request.auth.token.phone_number is string && data.phoneNumber == request.auth.token.phone_number))
         && data.nickname is string
         && data.nickname.size() <= 24
         && data.createdAt is timestamp

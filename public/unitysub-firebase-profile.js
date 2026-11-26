@@ -1,5 +1,14 @@
 const text = (value) => (typeof value === "string" ? value.trim() : "");
 
+export function normalizePhoneNumber(value) {
+  let phone = text(value).replace(/[\s().-]/g, "");
+  if (phone.startsWith("00")) phone = `+${phone.slice(2)}`;
+  if (/^234\d{10}$/.test(phone)) phone = `+${phone}`;
+  if (/^0\d{10}$/.test(phone)) phone = `+234${phone.slice(1)}`;
+  if (/^\d{10}$/.test(phone)) phone = `+234${phone}`;
+  return /^\+[1-9]\d{7,14}$/.test(phone) ? phone : "";
+}
+
 export function createProfileRecord(input) {
   const displayName = text(input.displayName || input.name);
   return {
@@ -9,6 +18,7 @@ export function createProfileRecord(input) {
     state: text(input.state),
     dateOfBirth: text(input.dateOfBirth || input.dob),
     gender: text(input.gender),
+    phoneNumber: normalizePhoneNumber(input.phoneNumber),
     nickname: text(input.nickname).slice(0, 24) || displayName.slice(0, 24),
   };
 }
