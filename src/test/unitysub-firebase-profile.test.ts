@@ -13,6 +13,14 @@ describe("Firebase profile records", () => {
     expect(firebaseSource).not.toContain("createKycConsent");
   });
 
+  it("does not request residential address during sign-up", () => {
+    const html = readFileSync(resolve(process.cwd(), "public/UNITYSUB_PHYSICAL_CARD_DISPLAY_FIXED.html"), "utf8");
+    const firebaseSource = readFileSync(resolve(process.cwd(), "public/unitysub-firebase.js"), "utf8");
+
+    expect(html).not.toContain("createAddress");
+    expect(firebaseSource).not.toContain("createAddress");
+  });
+
   it("keeps profile fields while excluding passwords, PINs, and NIN values", async () => {
     const helperSource = readFileSync(resolve(process.cwd(), "public/unitysub-firebase-profile.js"), "utf8");
     const helperUrl = `data:text/javascript;base64,${Buffer.from(helperSource).toString("base64")}`;
@@ -64,6 +72,7 @@ describe("Firebase profile records", () => {
     expect(firebaseSource).toContain("signInWithCustomToken");
     expect(html).toContain("Email or phone number");
     expect(html).not.toContain('id="phoneLoginPanel"');
+    expect(html).not.toContain("Sign in with phone");
   });
 
   it("limits profile reads to the matching signed-in user", () => {

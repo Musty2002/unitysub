@@ -434,8 +434,8 @@ window.finishLocalDemoSignup = async function (event) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMessage("createError", "Enter a valid email address in Step 1.");
   if (!phoneNumber) return setMessage("createError", "Enter a valid phone number with country code in Step 1.");
   if (password.length < 8 || password !== confirm) return setMessage("createError", "Check that your password is at least 8 characters and both entries match.");
-  if (!["createAddress", "createState", "createDob", "createGender"].every((id) => value(id))) {
-    return setMessage("createError", "Complete your residential address, state, date of birth and gender in Step 2.");
+  if (!["createState", "createDob", "createGender"].every((id) => value(id))) {
+    return setMessage("createError", "Complete your state, date of birth and gender in Step 2.");
   }
   if (!/^\d{4}$/.test(pin) || pin !== pinConfirm) return setMessage("createError", "Enter the same valid 4-digit PIN in both fields.");
 
@@ -478,7 +478,6 @@ window.finishLocalDemoSignup = async function (event) {
       displayName: name,
       email,
       phoneNumber: user.phoneNumber || phoneNumber,
-      address: value("createAddress"),
       state: value("createState"),
       dateOfBirth: value("createDob"),
       gender: value("createGender"),

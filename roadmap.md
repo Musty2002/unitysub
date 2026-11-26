@@ -11,5 +11,6 @@
 - [x] Connect Firebase email/password sign-in and owner-scoped profile/preferences in the customer app.
 - [x] Remove the Admin shortcut from the customer app's top corner.
 - [x] Replace the separate SMS login screen with email-or-phone plus password and add the Firebase Cloud Function code.
+- [x] Remove residential address collection from sign-up and its required validation.
 - [ ] Deploy and live-test phone/password sign-in in Firebase project `unitysub-8d27a` (requires owner access and billing setup).
 - [ ] In Firebase Console, create Cloud Firestore and publish the updated `firestore.rules` (requires project-owner console access).

@@ -1294,7 +1294,7 @@ body.dark-mode .app.send-active .bottomnav .qr-navitem .navicon{border-color:#0d
 <div hidden="" id="createStepTwo">
 <div style="margin:22px 0 8px;padding-top:18px;border-top:1px solid #e6ebe9;font-weight:750;color:#174943">Tier 1 · Identity verification</div>
 <p style="margin:0 0 12px;color:#87928f;font-size:13px;line-height:1.5">Complete these details during registration. Tier 1 allows eligible Airtime and Data purchases after verification.</p>
-<label class="auth-field"><span>Residential Address</span><input autocomplete="street-address" id="createAddress" name="address" placeholder="Enter your residential address" required=""/></label>
+
 <div class="unitysub-location-card" id="unitysubLocationCard">
 <div class="unitysub-location-heading"><span class="unitysub-location-icon">⌖</span><div><strong>Location details</strong><small>Select your state of residence.</small></div></div>
 <label class="auth-field"><span>State</span><select id="createState" name="state" required=""><option value="">Select your state</option></select></label>
@@ -3823,8 +3823,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMeterTypePicker
  };
  window.advanceCreateStepThree=function(){
    err('createIdentityStepError','');
-   const required=['createAddress','createState','createDob','createGender'];
-   for(const id of required){if(!val(id)){err('createIdentityStepError','Please complete your residential address, city/town, state, date of birth and gender.');return;}}
+   const required=['createState','createDob','createGender'];
+   for(const id of required){if(!val(id)){err('createIdentityStepError','Please complete your state, date of birth and gender.');return;}}
    showStep(3);
  };
  window.backToCreateStepOne=function(){showStep(1);};
@@ -3839,14 +3839,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMeterTypePicker
    if(!name)return err('createError','Enter your full name in Step 1.');
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return err('createError','Enter a valid email address in Step 1.');
    if(password.length<8||password!==confirm)return err('createError','Check that your password is at least 8 characters and both entries match.');
-   if(!val('createAddress')||!val('createState')||!val('createDob')||!val('createGender'))return err('createError','Complete your residential address, state, date of birth and gender in Step 2.');
+   if(!val('createState')||!val('createDob')||!val('createGender'))return err('createError','Complete your state, date of birth and gender in Step 2.');
 
    if(!/^\d{4}$/.test(pin))return err('createError','Enter a 4-digit PIN.');
    if(pin!==pin2)return err('createError','The PINs do not match.');
    const existing=(()=>{try{return JSON.parse(localStorage.getItem('unitysub_local_demo_account')||'null')}catch(_){return null}})();
    if(existing?.email===email)return err('createError','This email already has a local demo account.');
    try{localStorage.setItem('unitysub_local_demo_account',JSON.stringify({
-     name,email,password,pin,address:val('createAddress'),state:val('createState'),dob:val('createDob'),gender:val('createGender')
+     name,email,password,pin,state:val('createState'),dob:val('createDob'),gender:val('createGender')
    }));}catch(_){return err('createError','Browser storage is unavailable.');}
    if($('authScreen')){$('authScreen').style.display='none';$('authScreen').classList.remove('visible');}
    if($('mainApp'))$('mainApp').style.display='';
@@ -4174,7 +4174,7 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
  }
  function validateStepTwo(){
    setError('createIdentityStepError','');
-   const required=['createAddress','createState','createDob','createGender'];
+   const required=['createState','createDob','createGender'];
    for(const id of required){if(!value(id)){setError('createIdentityStepError','Please complete all personal information fields before continuing.');$(id)?.focus();return false;}}
    const dob=new Date(value('createDob')+'T00:00:00');
    if(Number.isNaN(dob.getTime())||dob>=new Date(new Date().toDateString())){setError('createIdentityStepError','Please enter a valid date of birth in the past.');return false;}
@@ -4210,7 +4210,7 @@ body.dark-mode .idservice-card,body.dark-mode .idservice-form-wrap{background:#1
    if(existing?.email===email){setError('createError','An account with this email already exists. Please log in.');return false;}
    const profile={
      name:value('createName'),email,password:$('createPassword').value,pin,
-     address:value('createAddress'),state:value('createState'),
+     state:value('createState'),
      dob:value('createDob'),gender:value('createGender'),
      createdAt:new Date().toISOString()
    };
