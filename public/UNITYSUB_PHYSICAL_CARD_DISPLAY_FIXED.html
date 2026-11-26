@@ -377,7 +377,7 @@ body.dark-mode .settings-subpage{background:#0d1f1b;color:#edf5f1}body.dark-mode
 
 
 /* v41 auth visibility fix: author form styles must not override hidden forms */
-.auth-screen form[hidden], #loginForm[hidden], #createForm[hidden], #forgotForm[hidden], #phoneLoginPanel[hidden], #unitysubPhoneLoginCodeWrap[hidden], #unitysubSignupOtp[hidden], #unitysubPhoneLinkCodeWrap[hidden] { display: none !important; }
+.auth-screen form[hidden], #loginForm[hidden], #createForm[hidden], #forgotForm[hidden], #unitysubSignupOtp[hidden], #unitysubPhoneLinkCodeWrap[hidden] { display: none !important; }
 
 /* v43: clearer password/PIN confirmation UX */
 .auth-secret-wrap{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #dfe6e3;border-radius:16px;background:#fbfcfb;padding-right:12px;box-sizing:border-box}
@@ -1274,19 +1274,12 @@ body.dark-mode .app.send-active .bottomnav .qr-navitem .navicon{border-color:#0d
 <div class="auth-tagline">Your account, all in one place.</div>
 <form id="loginForm" onsubmit="handleUnitySubLogin(event)">
 <h1 class="auth-title">Welcome back</h1><p class="auth-sub">Login to continue to your UNITYSUB account.</p>
-<label class="auth-field"><span>Email address</span><input autocomplete="username" id="loginIdentity" placeholder="Enter your email address" required="" type="email"/></label>
+<label class="auth-field"><span>Email or phone number</span><input autocomplete="username" id="loginIdentity" placeholder="Enter email or phone number" required="" type="text"/></label>
 <label class="auth-field"><span>Password</span><input autocomplete="current-password" id="loginPassword" minlength="4" placeholder="Enter password" required="" type="password"/></label>
 <div style="text-align:right"><button onclick="showAuth('forgot')" style="border:0;background:none;color:#205d55;font-weight:650" type="button">Forgot password?</button></div>
-<div class="auth-error" id="loginError" role="status"></div><button class="auth-submit" type="submit">Login</button><button class="auth-submit" onclick="showUnitySubPhoneLogin()" style="margin-top:10px;background:#eaf2ef;color:#174943" type="button">Sign in with phone</button>
+<div class="auth-error" id="loginError" role="status"></div><button class="auth-submit" type="submit">Login</button>
 <p class="auth-switch">New to UNITYSUB? <button onclick="showAuth('create')" type="button">Create account</button></p>
 </form>
-<div id="phoneLoginPanel" hidden>
-<h1 class="auth-title">Sign in with phone</h1><p class="auth-sub">Receive a secure one-time code by SMS.</p>
-<label class="auth-field"><span>Phone number</span><input autocomplete="tel" id="unitysubPhoneLoginNumber" inputmode="tel" placeholder="Enter phone number" type="tel"/></label>
-<div id="unitysubPhoneLoginRecaptcha"></div><button class="auth-submit" onclick="sendUnitySubPhoneLoginCode()" type="button">Send code</button>
-<div hidden id="unitysubPhoneLoginCodeWrap"><label class="auth-field"><span>6-digit code</span><input autocomplete="one-time-code" id="unitysubPhoneLoginCode" inputmode="numeric" maxlength="6" placeholder="Enter SMS code" type="text"/></label><button class="auth-submit" onclick="completeUnitySubPhoneLogin()" type="button">Verify and sign in</button></div>
-<div class="auth-error" id="unitysubPhoneLoginError" role="status"></div><p class="auth-switch"><button onclick="showUnitySubEmailLogin()" type="button">Use email and password</button></p>
-</div>
 <form id="createForm" onsubmit="handleUnitySubSignup(event)">
 <div id="createStepOne">
 <h1 class="auth-title">Create account</h1><p class="auth-sub">Create your UNITYSUB sign-in account. We will email you a confirmation link. Identity verification and wallet activation are separate steps.</p>

@@ -54,13 +54,16 @@ describe("Firebase profile records", () => {
     expect(normalizePhoneNumber("12345")).toBe("");
   });
 
-  it("links phone credentials to email accounts and provides phone-code sign-in", () => {
+  it("links verified phone credentials and uses password sign-in by phone", () => {
     const firebaseSource = readFileSync(resolve(process.cwd(), "public/unitysub-firebase.js"), "utf8");
+    const html = readFileSync(resolve(process.cwd(), "public/UNITYSUB_PHYSICAL_CARD_DISPLAY_FIXED.html"), "utf8");
 
     expect(firebaseSource).toContain("PhoneAuthProvider");
     expect(firebaseSource).toContain("linkWithCredential");
-    expect(firebaseSource).toContain("signInWithCredential");
-    expect(firebaseSource).toContain("This phone number is not linked to an email account");
+    expect(firebaseSource).toContain("httpsCallable(functions, \"signInWithPhoneAndPassword\")");
+    expect(firebaseSource).toContain("signInWithCustomToken");
+    expect(html).toContain("Email or phone number");
+    expect(html).not.toContain('id="phoneLoginPanel"');
   });
 
   it("limits profile reads to the matching signed-in user", () => {

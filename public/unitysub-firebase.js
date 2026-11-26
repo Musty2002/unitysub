@@ -3,7 +3,6 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
-  getAdditionalUserInfo,
   getAuth,
   linkWithCredential,
   onAuthStateChanged,
@@ -11,11 +10,15 @@ import {
   RecaptchaVerifier,
   sendPasswordResetEmail,
   setPersistence,
-  signInWithCredential,
+  signInWithCustomToken,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+  getFunctions,
+  httpsCallable,
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 import {
   doc,
   getDoc,
@@ -43,6 +46,8 @@ const firebaseConfig = {
 const firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp, "us-central1");
+const phonePasswordLogin = httpsCallable(functions, "signInWithPhoneAndPassword");
 const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 const appStorage = window.localStorage;
 const ACTIVE_UID_KEY = "unitysub-active-user-id";
@@ -61,7 +66,6 @@ let suppressPreferenceSync = false;
 let preferenceTimer;
 let pendingPreferences = {};
 let signupPhoneVerificationId = "";
-let loginPhoneVerificationId = "";
 let linkedPhoneVerificationId = "";
 const phoneRecaptchaVerifiers = new Map();
 
@@ -126,6 +130,12 @@ function toast(message) {
 
 function authError(error) {
   const code = error?.code;
+  if (code === "functions/unauthenticated") return "Email or phone number or password is incorrect.";
+  if (code === "functions/not-found") return "Phone/password sign-in is not deployed in Firebase yet. Deploy the UNITYSUB sign-in function.";
+  if (code === "functions/failed-precondition") {
+    return `Email/Password sign-in is disabled for Firebase project ${firebaseConfig.projectId}. Confirm it is enabled in that project.`;
+  }
+  if (code === "functions/unavailable") return "Phone/password sign-in is temporarily unavailable. Try again.";
   if (code === "auth/invalid-phone-number") return "Enter a valid phone number, including its country code.";
   if (code === "auth/captcha-check-failed") return "Phone verification could not be completed. Please try again.";
   if (code === "auth/quota-exceeded") return "SMS verification is temporarily unavailable. Please try again later.";
@@ -140,7 +150,7 @@ function authError(error) {
   }
   if (code === "auth/email-already-in-use") return "An account with this email already exists. Please log in.";
   if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
-    return "Email or password is incorrect.";
+    return "Email or phone number or password is incorrect.";
   }
   if (code === "auth/weak-password") return "Choose a stronger password with at least 8 characters.";
   if (code === "auth/invalid-email") return "Enter a valid email address.";
@@ -292,10 +302,6 @@ function showLogin() {
     authScreen.setAttribute("aria-hidden", "false");
   }
   if (typeof window.showAuth === "function") window.showAuth("login");
-  const phonePanel = element("phoneLoginPanel");
-  const loginForm = element("loginForm");
-  if (phonePanel) phonePanel.hidden = true;
-  if (loginForm) loginForm.hidden = false;
 }
 
 function showPinLock() {
@@ -376,78 +382,38 @@ function clearSignupSecrets() {
   }
 }
 
-window.showUnitySubPhoneLogin = function () {
-  const loginForm = element("loginForm");
-  const phonePanel = element("phoneLoginPanel");
-  if (loginForm) loginForm.hidden = true;
-  if (phonePanel) phonePanel.hidden = false;
-  setMessage("unitysubPhoneLoginError", "");
-};
-
-window.showUnitySubEmailLogin = function () {
-  const loginForm = element("loginForm");
-  const phonePanel = element("phoneLoginPanel");
-  if (phonePanel) phonePanel.hidden = true;
-  if (loginForm) loginForm.hidden = false;
-  setMessage("unitysubPhoneLoginError", "");
-};
-
-window.sendUnitySubPhoneLoginCode = async function () {
-  setMessage("unitysubPhoneLoginError", "");
-  const phoneNumber = normalizePhoneNumber(element("unitysubPhoneLoginNumber")?.value || "");
-  if (!phoneNumber) return setMessage("unitysubPhoneLoginError", "Enter a valid phone number, including its country code.");
-  try {
-    loginPhoneVerificationId = await requestPhoneVerification(phoneNumber, "unitysubPhoneLoginRecaptcha");
-    const codeWrap = element("unitysubPhoneLoginCodeWrap");
-    if (codeWrap) codeWrap.hidden = false;
-    setMessage("unitysubPhoneLoginError", `A 6-digit code was sent to ${phoneNumber}.`);
-  } catch (error) {
-    setMessage("unitysubPhoneLoginError", authError(error));
-  }
-};
-
-window.completeUnitySubPhoneLogin = async function () {
-  setMessage("unitysubPhoneLoginError", "");
-  const code = (element("unitysubPhoneLoginCode")?.value || "").trim();
-  if (!loginPhoneVerificationId) return setMessage("unitysubPhoneLoginError", "Request a verification code first.");
-  if (!/^\d{6}$/.test(code)) return setMessage("unitysubPhoneLoginError", "Enter the 6-digit code sent to your phone.");
-  try {
-    await authPersistenceReady;
-    const credential = await signInWithCredential(auth, PhoneAuthProvider.credential(loginPhoneVerificationId, code));
-    if (!credential.user.email) {
-      if (getAdditionalUserInfo(credential)?.isNewUser) {
-        try {
-          await deleteUser(credential.user);
-        } catch {
-          // Don't keep a new phone-only account if Firebase won't delete it.
-        }
-      }
-      await signOut(auth);
-      loginPhoneVerificationId = "";
-      window.showUnitySubPhoneLogin();
-      return setMessage("unitysubPhoneLoginError", "This phone number is not linked to an email account. Sign in with email, then verify it in My Profile.");
-    }
-    loginPhoneVerificationId = "";
-    if (element("unitysubPhoneLoginCode")) element("unitysubPhoneLoginCode").value = "";
-    const codeWrap = element("unitysubPhoneLoginCodeWrap");
-    if (codeWrap) codeWrap.hidden = true;
-  } catch (error) {
-    setMessage("unitysubPhoneLoginError", authError(error));
-  }
-};
-
 window.handleUnitySubLogin = async function (event) {
   if (event) event.preventDefault();
   setMessage("loginError", "");
-  const email = (element("loginIdentity")?.value || "").trim().toLowerCase();
+  const identity = (element("loginIdentity")?.value || "").trim();
   const password = element("loginPassword")?.value || "";
-  if (!email || !password) return setMessage("loginError", "Enter your email address and password.");
+  if (!identity || !password) return setMessage("loginError", "Enter your email or phone number and password.");
+  const isEmail = identity.includes("@");
+  const email = identity.toLowerCase();
+  const phoneNumber = isEmail ? "" : normalizePhoneNumber(identity);
+  if (isEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return setMessage("loginError", "Enter a valid email address or phone number.");
+  }
+  if (!isEmail && !phoneNumber) return setMessage("loginError", "Enter a valid email address or phone number.");
+  const submitButton = element("loginForm")?.querySelector('button[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
   try {
     await authPersistenceReady;
-    await signInWithEmailAndPassword(auth, email, password);
+    if (isEmail) {
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      const result = await phonePasswordLogin({ phoneNumber, password });
+      const customToken = result.data?.customToken;
+      if (typeof customToken !== "string" || customToken.length === 0) {
+        throw new Error("Phone sign-in did not return a valid session.");
+      }
+      await signInWithCustomToken(auth, customToken);
+    }
     if (element("loginPassword")) element("loginPassword").value = "";
   } catch (error) {
     setMessage("loginError", authError(error));
+  } finally {
+    if (submitButton) submitButton.disabled = false;
   }
 };
 

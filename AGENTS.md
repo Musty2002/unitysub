@@ -32,6 +32,6 @@ use the editor.
 ## Project-specific decisions
 
 - Keep the supplied customer app as standalone public HTML embedded in the home route; connect services through small browser modules to preserve its supplied design and flows.
-- Use Firebase's browser SDK for customer sign-in and owner-scoped profile/preferences; never store passwords, PINs, NINs, or simulated financial records in Firestore.
+- Use Firebase Web SDK for customer Auth/profile/preferences and one Callable Firebase Function for phone-plus-password login; never expose linked emails or store passwords, PINs, NINs, or simulated financial records in Firestore.
 - Keep administration in a separate TanStack `/admin` layout with scoped theme tokens; it must not alter the imported customer HTML.
 - Until live data and role-verified authentication are connected, admin pages are presentation-only with empty records and no financial or customer mutation actions.
