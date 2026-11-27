@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+import { installUnitySubCloudBridge } from "@/lib/unitysub-cloud-bridge";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,11 +18,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  useEffect(() => installUnitySubCloudBridge(), []);
+
   return (
     <main className="fixed inset-0 h-dvh w-full overflow-hidden bg-background">
       <iframe
         title="UNITYSUB premium digital services app"
-        src="/UNITYSUB_PHYSICAL_CARD_DISPLAY_FIXED.html?v=auth-refresh-2"
+        src="/UNITYSUB_PHYSICAL_CARD_DISPLAY_FIXED.html?v=cloud-auth-1"
         className="h-full w-full border-0"
       />
     </main>

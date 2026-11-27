@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_preferences: {
+        Row: {
+          auto_logout: string | null
+          dark_mode: string | null
+          login_alerts: string | null
+          login_fingerprint: string | null
+          transaction_alerts: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_logout?: string | null
+          dark_mode?: string | null
+          login_alerts?: string | null
+          login_fingerprint?: string | null
+          transaction_alerts?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_logout?: string | null
+          dark_mode?: string | null
+          login_alerts?: string | null
+          login_fingerprint?: string | null
+          transaction_alerts?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string
+          created_at: string
+          date_of_birth: string
+          display_name: string
+          gender: string
+          nickname: string
+          state: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          date_of_birth?: string
+          display_name?: string
+          gender?: string
+          nickname?: string
+          state?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          date_of_birth?: string
+          display_name?: string
+          gender?: string
+          nickname?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,5 +1,20 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795821075187,
+      "tag": "0000_create_unitysub_cloud_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795821329027,
+      "tag": "0001_restrict_profile_trigger_function",
+      "breakpoints": true
+    }
+  ]
 }

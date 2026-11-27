@@ -6135,14 +6135,14 @@ body.dark-mode .bottomnav .navitem.active:not(.qr-navitem){background:#183b33!im
 })();
 </script>
 
-<script id="unitysub-firebase-fallback">
+<script id="unitysub-cloud-fallback">
 (function(){
   try{localStorage.removeItem('unitysub_local_demo_account');localStorage.removeItem('unitysub_device_login_enabled')}catch(e){}
-  function unavailable(id){var target=document.getElementById(id);if(target)target.textContent='Firebase could not be loaded. Refresh the page and try again.';}
+  function unavailable(id){var target=document.getElementById(id);if(target)target.textContent='Lovable Cloud could not be reached. Refresh the page and try again.';}
   window.handleUnitySubLogin=function(event){if(event)event.preventDefault();unavailable('loginError');};
   window.finishLocalDemoSignup=function(event){if(event)event.preventDefault();unavailable('createError');};
   window.handleUnitySubForgot=function(event){if(event)event.preventDefault();unavailable('forgotError');};
   window.unlockDemoApp=function(event){if(event)event.preventDefault();unavailable('unlockPinError');};
 })();
 </script>
-<script type="module" src="/unitysub-firebase.js?v=auth-refresh-2"></script>
+<script type="module" src="/unitysub-cloud.js?v=cloud-auth-1"></script>
